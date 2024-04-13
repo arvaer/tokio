@@ -183,6 +183,7 @@ fn worker_steal_count() {
 
     let rt = threaded_no_lifo();
     let metrics = rt.metrics();
+    let _ = metrics.num_workers();
     rt.block_on(async {
         let (tx, rx) = channel();
 
@@ -191,12 +192,10 @@ fn worker_steal_count() {
             // Spawn the task that sends to the channel
             //
             // Since the lifo slot is disabled, this task is stealable.
-                tokio::spawn(async move {
-                    for _ in 1..10{
-                        ()
-                    }
-                    tx.clone().send(()).unwrap();
-                });
+            tokio::spawn(async move {
+                tx.send(()).unwrap();
+            });
+
             // Blocking receive on the channel.
             rx.recv().unwrap();
         })
