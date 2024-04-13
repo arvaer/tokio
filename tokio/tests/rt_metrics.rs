@@ -175,16 +175,14 @@ fn worker_noop_count() {
 }
 
 #[test]
-#[ignore] // this test is flaky, see https://github.com/tokio-rs/tokio/issues/6470
 fn worker_steal_count() {
     // This metric only applies to the multi-threaded runtime.
-    //
+    // test
     // We use a blocking channel to backup one worker thread.
     use std::sync::mpsc::channel;
 
     let rt = threaded_no_lifo();
     let metrics = rt.metrics();
-
     rt.block_on(async {
         let (tx, rx) = channel();
 
@@ -193,10 +191,12 @@ fn worker_steal_count() {
             // Spawn the task that sends to the channel
             //
             // Since the lifo slot is disabled, this task is stealable.
-            tokio::spawn(async move {
-                tx.send(()).unwrap();
-            });
-
+                tokio::spawn(async move {
+                    for _ in 1..10{
+                        ()
+                    }
+                    tx.clone().send(()).unwrap();
+                });
             // Blocking receive on the channel.
             rx.recv().unwrap();
         })
@@ -730,7 +730,7 @@ fn threaded() -> Runtime {
 
 fn threaded_no_lifo() -> Runtime {
     tokio::runtime::Builder::new_multi_thread()
-        .worker_threads(2)
+        .worker_threads(10)
         .disable_lifo_slot()
         .enable_all()
         .build()
